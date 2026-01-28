@@ -2,53 +2,11 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"net"
 	"log"
-	"time"
-	"strings"
+
+	"proj/internal/request"
 )
-
-
-func getLinesChannel(conn net.Conn) <-chan string {
-	
-	ch := make(chan string)
-	go func() {
-		defer close(ch)
-		defer conn.Close()
-		// result = parts[len(parts)-1]
-		
-		var result string
-		buffer := make([]byte, 8)
-		for {
-			conn.SetReadDeadline(time.Now().Add(10 * time.Second))
-			n, err := conn.Read(buffer)
-			
-			if n > 0 {
-				result += string(buffer[:n])
-				parts := strings.Split(result, "\n")
-
-				for i := 0; i < len(parts) - 1; i++ {
-					ch <- parts[i]
-				}
-
-				result = parts[len(parts)-1]
-			}
-
-			if err != nil {
-				if err != io.EOF {
-					fmt.Println("Error reading:", err)
-				}
-				if result != "" {
-					ch <- result
-				}
-				return
-			}
-		}
-
-	}()
-	return ch
-}
 
 func main() {
 	listener, err := net.Listen("tcp", ":42069")
@@ -57,16 +15,24 @@ func main() {
 	}
 	defer listener.Close()
 
+	fmt.Println("Started listening at :42069")
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Println(err)
+			log.Fatal(err)
 			continue
 		}
-		fmt.Println("Connectio has been accepted")
+		fmt.Println("Connection has been accepted")
 
-		for line := range getLinesChannel(conn) {
-			fmt.Printf("read: %s\n", line)
+		r, err := request.RequestFromReader(conn)
+		if err != nil {
+			log.Fatal(err)
 		}
+
+		fmt.Printf("Request line:\n")
+		fmt.Printf("- Method: %s\n", r.RequestLine.Method)
+		fmt.Printf("- Target: %s\n", r.RequestLine.RequestTarget)
+		fmt.Printf("- Version: %s\n", r.RequestLine.HttpVersion)
 	}
 }
