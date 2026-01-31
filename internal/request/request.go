@@ -4,17 +4,20 @@ import (
 	"io"
 	"fmt"
 	"bytes"
+	"proj/internal/headers"
 )
 
 type parserState string
 const (
-	StateInit parserState = "init"
-	StateDone parserState = "done"
+	StateInit    parserState = "init"
+	StateDone    parserState = "done"
+	StateHeaders parserState = "headers"
 )
 
 type Request struct {
 	RequestLine RequestLine
-	state parserState
+	Headers     *headers.Headers
+	state       parserState
 }
 
 type RequestLine struct {
@@ -25,7 +28,8 @@ type RequestLine struct {
 
 func newRequest() *Request {
 	return &Request{
-		state: StateInit,
+		state:   StateInit,
+		Headers: headers.NewHeaders(),
 	}
 }
 
@@ -39,7 +43,7 @@ func parseRequestLine(b []byte) (*RequestLine, int, error) {
 	}
 
 	startLine := b[:idx]
-	read := idx+len(SEPARATOR)
+	read := idx + len(SEPARATOR)
 
 	parts := bytes.Split(startLine, []byte(" "))
 	if len(parts) != 3 {
@@ -64,21 +68,39 @@ func (r *Request) parse(data []byte) (int, error) {
 	
 	outer:
 	for {
+		currentData := data[read:]
+
 		switch r.state {
 		case StateInit:
-			rl, n, err := parseRequestLine(data[read:])
+			rl, n, err := parseRequestLine(currentData)
 			if err != nil {
 				return 0, err
 			}
 			if n == 0 {
 				break outer
 			}
+			
 			r.RequestLine = *rl
 			read += n
-			r.state = StateDone
+			r.state = StateHeaders
+		
+		case StateHeaders:
+			n, done, err := r.Headers.Parse(currentData)
+			if err != nil {
+				return 0, err
+			}
+
+			if n == 0 {
+				break outer
+			}
+
+			read += n
+			if done {
+				r.state = StateDone
+			}
 			
 		case StateDone:
-			break outer	
+			break outer
 		}
 	}
 
