@@ -4,6 +4,7 @@ import (
 	"io"
 	"fmt"
 	"bytes"
+	"strconv"
 	"proj/internal/headers"
 )
 
@@ -12,12 +13,15 @@ const (
 	StateInit    parserState = "init"
 	StateDone    parserState = "done"
 	StateHeaders parserState = "headers"
+	StateBody    parserState = "body"
 )
 
 type Request struct {
-	RequestLine RequestLine
-	Headers     *headers.Headers
-	state       parserState
+	RequestLine    RequestLine
+	Headers        *headers.Headers
+	Body           []byte
+	expectedLength int
+	state          parserState
 }
 
 type RequestLine struct {
@@ -96,7 +100,35 @@ func (r *Request) parse(data []byte) (int, error) {
 
 			read += n
 			if done {
+				r.state = StateBody
+				str := r.Headers.Get("Content-Length")
+				if str == "" {
+					r.state = StateDone
+					break outer
+				}
+				contentLenght, err := strconv.Atoi(str)
+				if err != nil {
+					return 0, fmt.Errorf("Wrong context-length")
+				}
+				r.expectedLength = contentLenght
+			}
+
+		case StateBody:
+			if len(currentData) == 0 {
+				break outer
+			}
+
+			remaining := min(r.expectedLength - len(r.Body), len(currentData))
+			if len(currentData) > remaining {
+				currentData = currentData[:remaining]
+			}
+			
+			r.Body = append(r.Body, currentData...)
+			read += remaining
+
+			if r.expectedLength == len(r.Body) {
 				r.state = StateDone
+				break outer
 			}
 			
 		case StateDone:
