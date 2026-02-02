@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"net"
 	"log"
+	"net"
 
 	"proj/internal/request"
 )
@@ -34,7 +34,7 @@ func main() {
 		fmt.Printf("- Method: %s\n", r.RequestLine.Method)
 		fmt.Printf("- Target: %s\n", r.RequestLine.RequestTarget)
 		fmt.Printf("- Version: %s\n", r.RequestLine.HttpVersion)
-		
+
 		fmt.Printf("Headers:\n")
 		for key, value := range r.Headers.GetAllValues() {
 			fmt.Printf("- %s: %s\n", key, value)

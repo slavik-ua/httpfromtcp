@@ -1,8 +1,8 @@
 package headers
 
 import (
-	"fmt"
 	"bytes"
+	"fmt"
 	"strings"
 )
 
@@ -44,7 +44,7 @@ func isToken(data []byte) bool {
 	}
 	for _, c := range data {
 		found := false
-		
+
 		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') {
 			found = true
 		}
@@ -69,7 +69,7 @@ func parseHeader(data []byte) (string, string, error) {
 	}
 	name := parts[0]
 	value := bytes.TrimSpace(parts[1])
-	
+
 	if bytes.HasSuffix(name, []byte(" ")) {
 		return "", "", WRONG_HEADER
 	}
@@ -94,7 +94,7 @@ func (h Headers) Parse(data []byte) (int, bool, error) {
 			break
 		}
 
-		name, value, err := parseHeader(data[read:read+idx])
+		name, value, err := parseHeader(data[read : read+idx])
 		if err != nil {
 			return 0, false, err
 		}

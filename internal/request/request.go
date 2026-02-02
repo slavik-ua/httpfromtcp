@@ -1,14 +1,15 @@
 package request
 
 import (
-	"io"
-	"fmt"
 	"bytes"
-	"strconv"
+	"fmt"
+	"io"
 	"proj/internal/headers"
+	"strconv"
 )
 
 type parserState string
+
 const (
 	StateInit    parserState = "init"
 	StateDone    parserState = "done"
@@ -69,8 +70,8 @@ func parseRequestLine(b []byte) (*RequestLine, int, error) {
 
 func (r *Request) parse(data []byte) (int, error) {
 	read := 0
-	
-	outer:
+
+outer:
 	for {
 		currentData := data[read:]
 
@@ -83,11 +84,11 @@ func (r *Request) parse(data []byte) (int, error) {
 			if n == 0 {
 				break outer
 			}
-			
+
 			r.RequestLine = *rl
 			read += n
 			r.state = StateHeaders
-		
+
 		case StateHeaders:
 			n, done, err := r.Headers.Parse(currentData)
 			if err != nil {
@@ -118,11 +119,11 @@ func (r *Request) parse(data []byte) (int, error) {
 				break outer
 			}
 
-			remaining := min(r.expectedLength - len(r.Body), len(currentData))
+			remaining := min(r.expectedLength-len(r.Body), len(currentData))
 			if len(currentData) > remaining {
 				currentData = currentData[:remaining]
 			}
-			
+
 			r.Body = append(r.Body, currentData...)
 			read += remaining
 
@@ -130,7 +131,7 @@ func (r *Request) parse(data []byte) (int, error) {
 				r.state = StateDone
 				break outer
 			}
-			
+
 		case StateDone:
 			break outer
 		}

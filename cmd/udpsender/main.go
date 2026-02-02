@@ -1,11 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net"
 	"os"
-	"io"
-	"bufio"
 )
 
 func main() {
@@ -15,7 +15,7 @@ func main() {
 		fmt.Println("Error", err)
 		return
 	}
-	
+
 	conn, err := net.DialUDP("udp", nil, addr)
 	if err != nil {
 		fmt.Println("Connection failed:", err)
