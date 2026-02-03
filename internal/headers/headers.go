@@ -31,6 +31,16 @@ func (h *Headers) Set(name, value string) {
 	}
 }
 
+func (h *Headers) Replace(name, value string) {
+	name = strings.ToLower(name)
+	h.headers[name] = value
+}
+
+func (h *Headers) Delete(name string) {
+	name = strings.ToLower(name)
+	delete(h.headers, name)
+}
+
 func (h *Headers) GetAllValues() map[string]string {
 	return h.headers
 }
