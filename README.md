@@ -32,7 +32,7 @@ A lightweight, custom HTTP/1.1 server implementation written in Go. This project
 * Run the server:
 
 ```bash
-go run main.go
+go run ./cmd/httpserver
 ```
 
 The server will start on port 42069.
@@ -44,7 +44,6 @@ The server will start on port 42069.
 ## 🔗 Endpoints
 
 The [main.go](cmd/httpserver/main.go) file includes several demonstration handlers:
-Method	Endpoint	Description
 | Method | Request Target | Response Type | Behavior |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/` | `text/html` | **200 OK**: Returns a simple HTML success page. |

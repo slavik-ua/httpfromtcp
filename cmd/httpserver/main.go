@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -30,27 +31,46 @@ func handler(w *response.Writer, req *request.Request) {
 
 		resp, err := http.Get(fmt.Sprintf("https://httpbin.org/%s", value))
 		if err != nil {
+			if err := w.WriteStatusLine(response.StatusInternalServerError); err != nil {
+				return
+			}
+			w.WriteHeaders(response.GetDefaultHeaders(0))
 			return
 		}
 		defer resp.Body.Close()
 
+		if err := w.WriteStatusLine(response.StatusOK); err != nil {
+			return
+		}
+		if err := w.WriteHeaders(req_headers); err != nil {
+			return
+		}
+
 		buf := make([]byte, 1024)
 		hash := sha256.New()
 		total := 0
-		n, err := resp.Body.Read(buf)
-		for n > 0 {
-			_, err := w.WriteChunkedBody(buf[:n])
-			if err != nil {
-				return
+		for {
+			n, err := resp.Body.Read(buf)
+			if n > 0 {
+				if _, err := w.WriteChunkedBody(buf[:n]); err != nil {
+					return
+				}
+				hash.Write(buf[:n])
+				total += n
 			}
-			hash.Write(buf[:n])
-			total += n
-			n, err = resp.Body.Read(buf)
+			if err != nil {
+				if err != io.EOF {
+					return
+				}
+				break
+			}
 		}
-		w.WriteChunkedBodyDone()
+		if _, err := w.WriteChunkedBodyDone(); err != nil {
+			return
+		}
 
 		trailers := headers.NewHeaders()
-		trailers.Set("x-contnet-sha256", fmt.Sprintf("%x", hash))
+		trailers.Set("x-content-sha256", fmt.Sprintf("%x", hash.Sum(nil)))
 		trailers.Set("x-content-length", fmt.Sprintf("%d", total))
 		w.WriteTrailers(trailers)
 

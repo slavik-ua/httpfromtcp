@@ -69,8 +69,9 @@ func (w *Writer) WriteBody(p []byte) (int, error) {
 
 func (w *Writer) WriteChunkedBody(p []byte) (int, error) {
 	buf := bytes.NewBuffer([]byte{})
-	buf.Write([]byte(fmt.Sprintf("%d", len(p)) + "\r\n"))
+	buf.Write([]byte(fmt.Sprintf("%x", len(p)) + "\r\n"))
 	buf.Write(p)
+	buf.WriteString("\r\n")
 
 	b := buf.Bytes()
 
@@ -83,7 +84,7 @@ func (w *Writer) WriteChunkedBody(p []byte) (int, error) {
 }
 
 func (w *Writer) WriteChunkedBodyDone() (int, error) {
-	return w.writer.Write([]byte("0\r\n\r\n"))
+	return w.writer.Write([]byte("0\r\n"))
 }
 
 func (w *Writer) WriteTrailers(h *headers.Headers) error {
